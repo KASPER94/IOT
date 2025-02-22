@@ -1,0 +1,29 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+serverMaster="skaperskS"
+serverWorker="skaperskSW"
+
+Vagrant.configure("2") do |config|
+    config.vm.box = "debian/bookworm64"
+    #set Provider
+    config.vm.provider :virtualbox do |vb|
+        vb.memory = 1024
+        vb.cpus = 1
+    end
+
+    #config 1st Machine Master
+    config.vm.define "Server" do |server|
+        server.vm.hostname = serverMaster
+        server.vm.network "private_network", ip: "192.168.56.110"
+        server.vm.provision "shell", path: "scripts/setup_master.sh"
+    end
+
+    #config 2nd Machine Worker
+    config.vm.define "ServerWorker" do |server|
+        server.vm.hostname = serverWorker
+        server.vm.network "private_network", ip: "192.168.56.111"
+        server.vm.provision "shell", path: "scripts/setup_worker.sh"
+    end
+
+end
