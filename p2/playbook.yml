@@ -1,0 +1,28 @@
+- hosts: all
+  become: true
+  tasks:
+    - name: Installer les prérequis
+      apt:
+        name:
+          - curl
+          - gnupg
+          - apt-transport-https
+        state: present
+        update_cache: yes
+
+    - name: Installer K3s
+      shell: curl -sfL https://get.k3s.io | sh -
+
+    - name: Installer kubectl
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Déployer les applications
+      command: kubectl apply -f /vagrant/{{ item }}
+      with_items:
+        - ingress.yaml
+        - app1.yaml
+        - app2.yaml
+        - app3.yaml
