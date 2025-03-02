@@ -13,16 +13,63 @@
     - name: Installer K3s
       shell: curl -sfL https://get.k3s.io | sh -
 
+    - name: Modifier les permissions de k3s.yaml
+      file:
+        path: /etc/rancher/k3s/k3s.yaml
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
+
+    - name: Définir KUBECONFIG pour tous les utilisateurs
+      lineinfile:
+        path: /etc/environment
+        line: 'KUBECONFIG=/etc/rancher/k3s/k3s.yaml'
+        create: yes
+
     - name: Installer kubectl
       shell: |
         curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    - name: Déployer les applications
-      command: kubectl apply -f /vagrant/{{ item }}
+    - name: Attendre que K3s soit complètement démarré
+      shell: systemctl status k3s | grep "Active" | grep "running"
+      register: k3s_running
+      retries: 10
+      delay: 10
+      until: k3s_running.rc == 0
+      changed_when: false
+
+    - name: Vérifier si K3s est bien démarré avec KUBECONFIG explicite
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      command: kubectl get nodes
+      register: k3s_status
+      retries: 10
+      delay: 10
+      until: "'Ready' in k3s_status.stdout"
+      changed_when: false
+
+    - name: Ajouter les entrées d'hôtes pour les applications
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+        state: present
       with_items:
-        - ingress.yaml
+        - "192.168.56.110 app1.com"
+        - "192.168.56.110 app2.com"
+        - "192.168.56.110 app3.com"
+
+    - name: Déployer les applications avec KUBECONFIG explicite
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      command: kubectl apply -f /vagrant/apps/{{ item }}
+      with_items:
         - app1.yaml
         - app2.yaml
         - app3.yaml
+
+    - name: Déployer l'ingress avec KUBECONFIG explicite
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      command: kubectl apply -f /vagrant/ingress.yaml
