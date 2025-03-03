@@ -10,7 +10,8 @@ install_deps:
 
 install_vagrant:
 	@echo "📦 Installation de Vagrant et VirtualBox..."
-	sudo apt install -y vagrant virtualbox
+	sudo apt install -y vagrant
+	sudo apt-get install -y virtualbox-7.0
 	vagrant --version
 	@echo "✅ Vagrant et VirtualBox installés avec succès."
 
