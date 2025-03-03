@@ -11,17 +11,28 @@ install_deps:
 install_vagrant:
 	@echo "📦 Installation de Vagrant et VirtualBox..."
 	sudo apt install -y vagrant
-	sudo apt-get install -y virtualbox-7.0
-	vagrant --version
+	wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg
+	echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian bookworm contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+	sudo apt update
+	sudo apt install virtualbox-7.0 -y
 	@echo "✅ Vagrant et VirtualBox installés avec succès."
 
 install_k3s:
 	@echo "📦 Installation de K3s..."
 	curl -sfL https://get.k3s.io | sh -
 	sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-	sudo chown $USER:$USER /etc/rancher/k3s/k3s.yaml
-	echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.bashrc
-	source ~/.bashrc
+	sudo chown $(USER):$(USER) /etc/rancher/k3s/k3s.yaml
+	@if [ -f ~/.bashrc ]; then \
+		echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.bashrc; \
+		. ~/.bashrc; \
+	elif [ -f ~/.zshrc ]; then \
+		echo "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml" >> ~/.zshrc; \
+		. ~/.zshrc; \
+	else \
+		echo "Erreur: Aucun fichier .bashrc ou .zshrc trouvé"; \
+		exit 1; \
+	fi
+
 	kubectl version --client
 	@echo "✅ K3s et kubectl installés avec succès."
 
@@ -33,9 +44,12 @@ install_ansible:
 
 install_python:
 	@echo "📦 Installation des dépendances Python pour Ansible..."
-	sudo apt install -y python3 python3-pip
-	pip3 install --upgrade pip
-	pip3 install ansible-core paramiko cryptography
+	# sudo apt install -y python3 python3-pip
+	# pip3 install --upgrade pip
+	# pip3 install ansible-core paramiko cryptography
+	sudo apt install -y pipx
+	pipx install ansible-core
+	pipx inject ansible-core paramiko cryptography
 	@echo "✅ Modules Python pour Ansible installés."
 
 install_k3d:
