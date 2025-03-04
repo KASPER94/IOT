@@ -36,27 +36,36 @@ echo "Récupération du mot de passe Argo CD..."
 ARGOCD_PASSWORD=$(kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d)
 echo "Mot de passe Argo CD : $ARGOCD_PASSWORD" > p3/argocd_password.txt
 
+echo "Création du namespace dev..."
+kubectl create namespace dev
+
+PORT=8080
+if lsof -i :$PORT &> /dev/null; then
+    echo " Le port $PORT est déjà utilisé. Arrêt du processus existant..."
+    kill $(lsof -t -i :$PORT)
+    sleep 2
+fi
 echo "Exposition du serveur Argo CD en local..."
 kubectl port-forward svc/argocd-server -n argocd 8080:443 &
 
-echo "Création du namespace dev..."
-kubectl create namespace dev
 
 echo "Initialisation du projet terminée !"
 echo "Access ArgoCD : https://localhost:8080"
 echo "Le mot de passe est enregistré dans 'argocd_password.txt'"
 
 echo "Déploiement des fichiers de configuration Kubernetes..."
-kubectl apply -f p3/manifests/dev/namespace.yaml
-kubectl apply -f p3/manifests/dev/deployment.yaml
-kubectl apply -f p3/manifests/dev/service.yaml
-kubectl apply -f p3/manifests/dev/ingress.yaml
+kubectl apply -f p3/manifests/dev/
+
 
 echo "Ajout de l'application à Argo CD..."
 kubectl apply -f p3/manifests/application.yaml -n argocd
 
-echo "Synchronisation de l'application avec Argo CD..."
-argocd app sync my-app
+# Attente de la synchronisation de l'application
+kubectl rollout status deployment my-app -n dev
 
-echo "Statut de l'application Argo CD:"
-argocd app get my-app
+chmod +x p3/start_ngrok.sh
+bash p3/start_ngrok.sh &
+
+sleep 5
+NGROK_URL=$(cat p3/ngrok_url.txt)
+echo "🚀 Accédez à ArgoCD via : $NGROK_URL"
