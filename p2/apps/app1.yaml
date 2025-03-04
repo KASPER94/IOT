@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: app1-config
 data:
-  index.html: |
+  index.template.html: |
     <!DOCTYPE html>
     <html>
     <head>
@@ -25,16 +25,16 @@ data:
       </style>
     </head>
     <body>
-      <img class="kubernetes-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZmlsbD0iIzMyNmNlNSIgZD0iTTE1Ljk4NCAyYTEuNDcxIDEuNDcxIDAgMCAwLS41NzguMTI1bC05LjM3NSAzLjYyNWExLjQ2IDEuNDYgMCAwIDAtLjkwNiAxLjM3NnY5Ljc1YzAgLjIzNi4wNTkuNDU3LjE2OC42NThsMTUuOTQ1IDYuODgxYTEuNTMgMS41MyAwIDAgMCAxLjE5MS4wMWwxMC43OTctNC4xNTZjLjQ0Ni0uMT72L5"></img>
+      <img class="kubernetes-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" alt="Kubernetes Logo">
       <h1>Hello from app1.</h1>
-      <p>pod: <span id="pod-name"></span></p>
-      <p>node: <span id="node-name"></span></p>
-      <script>
-        document.getElementById('pod-name').innerText = process.env.POD_NAME;
-        document.getElementById('node-name').innerText = process.env.NODE_NAME;
-      </script>
+      <p>pod: <span id="pod-name">${POD_NAME}</span></p>
+      <p>node: <span id="node-name">${NODE_NAME}</span></p>
     </body>
     </html>
+  start.sh: |
+    #!/bin/sh
+    envsubst '${POD_NAME} ${NODE_NAME}' < /usr/share/nginx/html/index.template.html > /usr/share/nginx/html/index.html
+    exec nginx -g "daemon off;"
 ---
 
 apiVersion: apps/v1
@@ -65,11 +65,19 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        command: ["/bin/sh", "-c", "cp /start.sh /tmp/start.sh && chmod +x /tmp/start.sh && /tmp/start.sh"]
         volumeMounts:
-        - name: app-content
-          mountPath: /usr/share/nginx/html
+        - name: config-volume
+          mountPath: /usr/share/nginx/html/index.template.html
+          subPath: index.template.html
+        - name: script-volume
+          mountPath: /start.sh
+          subPath: start.sh
       volumes:
-      - name: app-content
+      - name: config-volume
+        configMap:
+          name: app1-config
+      - name: script-volume
         configMap:
           name: app1-config
 ---

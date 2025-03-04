@@ -3,11 +3,11 @@ kind: ConfigMap
 metadata:
   name: app2-config
 data:
-  index.html: |
+  index.template.html: |
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Kubernetes</title>
+      <title>Kubernetes - HTTPD</title>
       <style>
         body {
           background-color: #303030;
@@ -25,12 +25,19 @@ data:
       </style>
     </head>
     <body>
-      # <img class="kubernetes-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHBhdGggZmlsbD0iIzMyNmNlNSIgZD0iTTE1Ljk4NCAyYTEuNDcxIDEuNDcxIDAgMCAwLS41NzguMTI1bC05LjM3NSAzLjYyNWExLjQ2IDEuNDYgMCAwIDAtLjkwNiAxLjM3NnY5Ljc1YzAgLjIzNi4wNTkuNDU3LjE2OC42NThsMTUuOTQ1IDYuODgxYTEuNTMgMS41MyAwIDAgMCAxLjE5MS4wMWwxMC43OTctNC4xNTZjLjQ0Ni0uMTcyLjc3NS0uNTc4Ljg0OC0xLjA1OVYxMC4xNWMwLS4yMy0uMDU3LS40NS0uMTYtLjY0N2wtOS4xODYtNi45MDVhMS40ODYgMS40ODYgMCAwIDAtLjkxOC0uNTk4eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xNiA4LjJhNy44IDcuOCAwIDEgMCAwIDE1LjYgNy44IDcuOCAwIDAgMCAwLTE1LjZ6bTAgMTMuNWE1LjcgNS43IDAgMSAxIDAtMTEuNCA1LjcgNS43IDAgMCAxIDAgMTEuNHoiLz48L3N2Zz4=" alt="Kubernetes Logo">
-      <h1>Hello from app2.</h1>
-      <p>pod: <span id="pod-name">app-one-5c75c6d3-9n64n</span></p>
-      <p>node: <span id="node-name">Linux (4.19.0-24).1.x86_64</span></p>
+      <img class="kubernetes-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" alt="Kubernetes Logo">
+      <h1>Hello from app2 (HTTPD)</h1>
+      <p>Pod Name: <span id="pod-name">${POD_NAME}</span></p>
+      <p>Node Name: <span id="node-name">${NODE_NAME}</span></p>
     </body>
     </html>
+
+  start.sh: |
+    #!/bin/sh
+    cp /usr/local/apache2/htdocs/index.template.html /tmp/index.html
+    envsubst '${POD_NAME} ${NODE_NAME}' < /tmp/index.html > /usr/local/apache2/htdocs/index.html
+    exec httpd-foreground
+
 ---
 
 apiVersion: apps/v1
@@ -38,7 +45,7 @@ kind: Deployment
 metadata:
   name: app2
 spec:
-  replicas: 3 
+  replicas: 3
   selector:
     matchLabels:
       app: app2
@@ -52,13 +59,31 @@ spec:
         image: httpd
         ports:
         - containerPort: 80
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        command: ["/bin/sh", "-c", "cp /start.sh /tmp/start.sh && chmod +x /tmp/start.sh && /tmp/start.sh"]
         volumeMounts:
-        - name: app-content
-          mountPath: /usr/share/nginx/html
+        - name: config-volume
+          mountPath: /usr/local/apache2/htdocs/index.template.html
+          subPath: index.template.html
+        - name: script-volume
+          mountPath: /start.sh
+          subPath: start.sh
       volumes:
-      - name: app-content
+      - name: config-volume
         configMap:
           name: app2-config
+      - name: script-volume
+        configMap:
+          name: app2-config
+
 ---
 apiVersion: v1
 kind: Service
