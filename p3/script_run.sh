@@ -43,5 +43,20 @@ echo "Création du namespace dev..."
 kubectl create namespace dev
 
 echo "Initialisation du projet terminée !"
-echo "Accède à Argo CD ici : https://localhost:8080"
+echo "Access ArgoCD : https://localhost:8080"
 echo "Le mot de passe est enregistré dans 'argocd_password.txt'"
+
+echo "Déploiement des fichiers de configuration Kubernetes..."
+kubectl apply -f p3/manifests/dev/namespace.yaml
+kubectl apply -f p3/manifests/dev/deployment.yaml
+kubectl apply -f p3/manifests/dev/service.yaml
+kubectl apply -f p3/manifests/dev/ingress.yaml
+
+echo "Ajout de l'application à Argo CD..."
+kubectl apply -f p3/manifests/application.yaml -n argocd
+
+echo "Synchronisation de l'application avec Argo CD..."
+argocd app sync my-app
+
+echo "Statut de l'application Argo CD:"
+argocd app get my-app
