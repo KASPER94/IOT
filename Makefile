@@ -1,4 +1,4 @@
-.PHONY: all install_deps install_vagrant install_k3s install_ansible install_python install_k3d install_kubectl p3 stop_p3
+.PHONY: all install_deps install_vagrant install_k3s install_ansible install_python install_k3d install_kubectl p3 stop_p3 install_docker
 
 all: install_deps install_vagrant install_k3s install_ansible install_python install_k3d install_kubectl
 
@@ -63,6 +63,25 @@ install_kubectl:
 	chmod +x kubectl
 	sudo mv kubectl /usr/local/bin/
 	@echo "✅ Kubectl installé avec succès."
+
+reinstall_kubectl_p3:
+	@if [ -f /usr/local/bin/kubectl ]; then \
+		sudo rm -f /usr/local/bin/kubectl; \
+	fi
+	curl -LO "https://dl.k8s.io/release/v1.32.2/bin/linux/amd64/kubectl"
+	chmod +x kubectl
+	sudo mv kubectl /usr/local/bin/
+
+
+
+install_docker:
+	# Add the repository to Apt sources:
+	echo "deb [arch=$(shell dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+	sudo apt-get update
+	sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+	sudo docker run hello-world
+	sudo usermod -aG docker $USER
+	newgrp docker
 
 p3:
 	chmod +x p3/script_run.sh
