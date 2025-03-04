@@ -26,7 +26,8 @@ if pgrep -x "ngrok" > /dev/null; then
     echo " Ngrok tourne déjà."
 else
     echo " Démarrage de ngrok..."
-    ngrok http 8080 > /dev/null &
+    ngrok http https://localhost:8080 > /dev/null &
+    # ngrok http 8080 > /dev/null &
     sleep 5  # Laisser le temps à ngrok pour générer l'URL
 fi
 
