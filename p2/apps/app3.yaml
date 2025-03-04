@@ -1,3 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app3-config
+data:
+  index.template.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Kubernetes</title>
+      <style>
+        body {
+          background-color: #303030;
+          color: white;
+          font-family: Arial, sans-serif;
+          text-align: center;
+          margin: 0;
+          padding: 20px;
+        }
+        .kubernetes-logo {
+          width: 50px;
+          height: 50px;
+          margin-bottom: 10px;
+        }
+      </style>
+    </head>
+    <body>
+      <img class="kubernetes-logo" src="https://upload.wikimedia.org/wikipedia/commons/3/39/Kubernetes_logo_without_workmark.svg" alt="Kubernetes Logo">
+      <h1>Hello from app3.</h1>
+      <p>pod: <span id="pod-name">${POD_NAME}</span></p>
+      <p>node: <span id="node-name">${NODE_NAME}</span></p>
+    </body>
+    </html>
+  start.sh: |
+    #!/bin/sh
+    envsubst '${POD_NAME} ${NODE_NAME}' < /usr/share/nginx/html/index.template.html > /usr/share/nginx/html/index.html
+    exec nginx -g "daemon off;"
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,6 +56,30 @@ spec:
         image: nginx
         ports:
         - containerPort: 80
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        command: ["/bin/sh", "-c", "cp /start.sh /tmp/start.sh && chmod +x /tmp/start.sh && /tmp/start.sh"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /usr/share/nginx/html/index.template.html
+          subPath: index.template.html
+        - name: script-volume
+          mountPath: /start.sh
+          subPath: start.sh
+      volumes:
+      - name: config-volume
+        configMap:
+          name: app3-config
+      - name: script-volume
+        configMap:
+          name: app3-config
 ---
 apiVersion: v1
 kind: Service

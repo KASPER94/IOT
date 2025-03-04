@@ -34,9 +34,25 @@ data:
 
   start.sh: |
     #!/bin/sh
+    echo "Starting HTTPD configuration..."
+    echo "POD_NAME is: $POD_NAME"
+    echo "NODE_NAME is: $NODE_NAME"
+    
     cp /usr/local/apache2/htdocs/index.template.html /tmp/index.html
-    envsubst '${POD_NAME} ${NODE_NAME}' < /tmp/index.html > /usr/local/apache2/htdocs/index.html
-    exec httpd-foreground
+    sed -i "s/\${POD_NAME}/$POD_NAME/g" /tmp/index.html
+    sed -i "s/\${NODE_NAME}/$NODE_NAME/g" /tmp/index.html
+    cp /tmp/index.html /usr/local/apache2/htdocs/index.html
+
+    echo "Files in /usr/local/apache2/htdocs/"
+    ls -l /usr/local/apache2/htdocs/
+
+    # Vérifier si HTTPD tourne déjà
+    if pgrep httpd > /dev/null; then
+      echo "HTTPD is already running"
+    else
+      echo "Starting HTTPD..."
+      exec httpd-foreground
+    fi
 
 ---
 
