@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/KASPER94/IOT
     targetRevision: HEAD
-    path: "p3/manifests/dev"
+    path: "manifests/dev"
   destination:
     server: https://kubernetes.default.svc
     namespace: dev
