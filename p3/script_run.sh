@@ -38,6 +38,7 @@ echo "Mot de passe Argo CD : $ARGOCD_PASSWORD" > p3/argocd_password.txt
 
 echo "Création du namespace dev..."
 kubectl create namespace dev
+kubectl patch configmap argocd-cmd-params-cm -n argocd -p '{"data": {"server.insecure": "true", "server.basehref": "/"}}'
 
 PORT=8080
 if lsof -i :$PORT &> /dev/null; then
