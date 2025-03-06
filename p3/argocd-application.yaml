@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/KASPER94/IOT
+    repoURL: https://github.com/KASPER94/argo-config-repo
     targetRevision: HEAD
-    path: "manifests/dev"
+    path: "dev"
   destination:
     server: https://kubernetes.default.svc
     namespace: dev

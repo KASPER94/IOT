@@ -19,7 +19,7 @@ then
 fi
 
 echo "Création du cluster Kubernetes avec K3d..."
-k3d cluster create mycluster --servers 1 --agents 1
+k3d cluster create argocd_cluster --servers 1 --agents 1
 
 echo "Cluster K3d créé avec succès !"
 
@@ -55,14 +55,7 @@ echo "Access ArgoCD : https://localhost:8080"
 echo "Le mot de passe est enregistré dans 'argocd_password.txt'"
 
 echo "Déploiement des fichiers de configuration Kubernetes..."
-kubectl apply -f p3/manifests/dev/
-
-
-echo "Ajout de l'application à Argo CD..."
-kubectl apply -f p3/manifests/application.yaml -n argocd
-
-# Attente de la synchronisation de l'application
-kubectl rollout status deployment my-app -n dev
+kubectl apply -f argocd-application.yaml
 
 chmod +x p3/start_ngrok.sh
 bash p3/start_ngrok.sh &
