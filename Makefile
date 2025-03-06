@@ -97,8 +97,9 @@ p3:
 
 stop_p3:
 	rm -rf p3/argocd_password.txt; rm -rf p3/ngrok_url.txt
-	k3d cluster stop mycluster
-	k3d cluster delete mycluster
+	k3d cluster stop argocd
+	k3d cluster delete argocd
+	pkill -f ngrok
 
 
 

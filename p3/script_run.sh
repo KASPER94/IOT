@@ -1,25 +1,25 @@
 #!/bin/bash
 
 #verif
-echo "Initialisation du projet P3 avec K3d et Argo CD..."
-if ! command -v k3d &> /dev/null
-then
-    echo "❌ K3d n'est pas installé. Exécute 'make install_k3d' d'abord."
-    exit 1
-fi
-if ! command -v kubectl &> /dev/null
-then
-    echo "❌ Kubectl n'est pas installé. Exécute 'make install_kubectl' d'abord."
-    exit 1
-fi
-if ! docker info &> /dev/null
-then
-    echo "❌ Docker ne semble pas fonctionner. Assure-toi qu'il est bien lancé."
-    exit 1
-fi
+# echo "Initialisation du projet P3 avec K3d et Argo CD..."
+# if ! command -v k3d &> /dev/null
+# then
+#     echo "❌ K3d n'est pas installé. Exécute 'make install_k3d' d'abord."
+#     exit 1
+# fi
+# if ! command -v kubectl &> /dev/null
+# then
+#     echo "❌ Kubectl n'est pas installé. Exécute 'make install_kubectl' d'abord."
+#     exit 1
+# fi
+# if ! docker info &> /dev/null
+# then
+#     echo "❌ Docker ne semble pas fonctionner. Assure-toi qu'il est bien lancé."
+#     exit 1
+# fi
 
 echo "Création du cluster Kubernetes avec K3d..."
-k3d cluster create argocd_cluster --servers 1 --agents 1
+k3d cluster create argocd --servers 1 --agents 1
 
 echo "Cluster K3d créé avec succès !"
 
@@ -55,11 +55,18 @@ echo "Access ArgoCD : https://localhost:8080"
 echo "Le mot de passe est enregistré dans 'argocd_password.txt'"
 
 echo "Déploiement des fichiers de configuration Kubernetes..."
-kubectl apply -f argocd-application.yaml
+# kubectl apply -f argocd-application.yaml
+kubectl apply -f p3/argocd-application.yaml 
+
+while ! nc -z localhost 8080; do
+    echo "waiting for ArgoCD.."
+    sleep 2
+done
 
 chmod +x p3/start_ngrok.sh
 bash p3/start_ngrok.sh &
 
-sleep 5
+sleep 10
+
 NGROK_URL=$(cat p3/ngrok_url.txt)
 echo "🚀 Accédez à ArgoCD via : $NGROK_URL"
