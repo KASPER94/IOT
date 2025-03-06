@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/KASPER94/argo-config-repo
+    repoURL: https://github.com/KASPER94/argo-config-skapersk
     targetRevision: HEAD
     path: "dev"
   destination:
